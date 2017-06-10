@@ -10,6 +10,7 @@ import Debug
 type alias Model =
     { language : Language
     , count : Int
+    , context : Context
     }
 
 
@@ -17,11 +18,13 @@ initModel : Model
 initModel =
     { language = PL
     , count = 0
+    , context = { language = PL }
     }
 
 
 type alias Context =
-    TranslatableText -> String
+    { language : Language
+    }
 
 
 type Msg
@@ -42,19 +45,39 @@ type Language
     | ENG
 
 
-messageToEng : TranslatableText -> String
+type alias Translator =
+    TranslatableText -> String
+
+
+messageToEng : Translator
 messageToEng THello =
     "Hello!"
 
 
-messageToPl : TranslatableText -> String
+messageToPl : Translator
 messageToPl THello =
     "Cześć!"
 
 
+translate : Language -> TranslatableText -> String
+translate language =
+    case language of
+        PL ->
+            messageToPl
+
+        ENG ->
+            messageToEng
+
+
 transText : TranslatableText -> HtmlWithContext Context msg
 transText tt =
-    HtmlWithContext.inContext (\translate -> Html.text (translate tt)) |> Debug.log "transText"
+    simpleTrans tt
+        |> HtmlWithContext.mapContext (\{ language } -> language)
+
+
+simpleTrans : TranslatableText -> HtmlWithContext Language msg
+simpleTrans tt =
+    HtmlWithContext.inContext (\l -> Html.text (translate l tt)) |> Debug.log "simpleTrans"
 
 
 
@@ -63,7 +86,7 @@ transText tt =
 
 view : Model -> Html.Html Msg
 view model =
-    HtmlWithContext.unwrap (getContext model) (contextView model)
+    HtmlWithContext.unwrap model.context (contextView model)
 
 
 update : Msg -> Model -> Model
@@ -78,14 +101,31 @@ update msg model =
             { model | count = model.count + 1 }
 
 
+recalculateContext : Model -> Model
+recalculateContext model =
+    { model
+        | context = leftIfEqual model.context (getContext model)
+    }
+
+
+leftIfEqual : a -> a -> a
+leftIfEqual a b =
+    if a == b then
+        a
+    else
+        b
+
+
+wrappedUpdate : Msg -> Model -> Model
+wrappedUpdate msg model =
+    update msg model
+        |> recalculateContext
+
+
 getContext : Model -> Context
 getContext model =
-    case model.language of
-        PL ->
-            messageToPl
-
-        ENG ->
-            messageToEng
+    { language = model.language
+    }
 
 
 contextView : Model -> HtmlWithContext Context Msg
@@ -116,5 +156,5 @@ main =
     Html.beginnerProgram
         { model = initModel
         , view = view
-        , update = update
+        , update = wrappedUpdate
         }
