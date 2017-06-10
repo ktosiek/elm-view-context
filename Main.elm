@@ -4,10 +4,19 @@ import HtmlWithContext exposing (HtmlWithContext, div, text)
 import Html exposing (Html)
 import Html.Attributes
 import Html.Events
+import Debug
 
 
 type alias Model =
     { language : Language
+    , count : Int
+    }
+
+
+initModel : Model
+initModel =
+    { language = PL
+    , count = 0
     }
 
 
@@ -17,6 +26,7 @@ type alias Context =
 
 type Msg
     = SetLanguage Language
+    | Count
 
 
 
@@ -44,7 +54,7 @@ messageToPl THello =
 
 transText : TranslatableText -> HtmlWithContext Context msg
 transText tt =
-    HtmlWithContext.inContext (\translate -> Html.text (translate tt))
+    HtmlWithContext.inContext (\translate -> Html.text (translate tt)) |> Debug.log "transText"
 
 
 
@@ -57,9 +67,15 @@ view model =
 
 
 update : Msg -> Model -> Model
-update (SetLanguage l) model =
-    { language = l
-    }
+update msg model =
+    case msg of
+        SetLanguage l ->
+            { model
+                | language = l
+            }
+
+        Count ->
+            { model | count = model.count + 1 }
 
 
 getContext : Model -> Context
@@ -75,10 +91,11 @@ getContext model =
 contextView : Model -> HtmlWithContext Context Msg
 contextView model =
     div []
-        [ transText THello
+        [ HtmlWithContext.lazy transText THello
         , div [] [ HtmlWithContext.lift nativeElement ]
         , div [ Html.Events.onClick (SetLanguage PL) ] [ text "PL" ]
         , div [ Html.Events.onClick (SetLanguage ENG) ] [ text "ENG" ]
+        , div [ Html.Events.onClick Count ] [ text (toString model.count) ]
         ]
 
 
@@ -92,11 +109,12 @@ nativeElement =
             ]
         ]
         []
+        |> Debug.log "img"
 
 
 main =
     Html.beginnerProgram
-        { model = { language = PL }
+        { model = initModel
         , view = view
         , update = update
         }
