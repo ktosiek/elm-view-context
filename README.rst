@@ -11,5 +11,4 @@ TODO
 ----
 
 - keyed lists
-- lazy2 & lazy3 (will probably need to go native for that)
 - all the ``node`` wrappers from ``Html``

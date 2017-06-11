@@ -132,11 +132,17 @@ contextView : Model -> HtmlWithContext Context Msg
 contextView model =
     div []
         [ HtmlWithContext.lazy transText THello
+        , HtmlWithContext.lazy3 wrappedTransText "[" "]" THello
         , div [] [ HtmlWithContext.lift nativeElement ]
         , div [ Html.Events.onClick (SetLanguage PL) ] [ text "PL" ]
         , div [ Html.Events.onClick (SetLanguage ENG) ] [ text "ENG" ]
         , div [ Html.Events.onClick Count ] [ text (toString model.count) ]
         ]
+
+
+wrappedTransText : String -> String -> TranslatableText -> HtmlWithContext Context Msg
+wrappedTransText l r t =
+    div [] [ text l, transText t, text r ] |> Debug.log "wrappedTransText"
 
 
 nativeElement : Html msg
